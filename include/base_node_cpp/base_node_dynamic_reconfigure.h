@@ -1,52 +1,41 @@
 #ifndef BASE_NODE_H
 #define BASE_NODE_H
 
-#include <ros/ros.h>
 #include <dynamic_reconfigure/server.h>
-#include "./base_node.h"
+#include <ros/ros.h>
 #include <iostream>
+#include "base_node.h"
 
 namespace base_node {
 
-    class BaseNode {
-      public:
-        explicit BaseNode(ros::NodeHandle &nh, ros::NodeHandle &p_nh):
-          nh_(nh), p_nh_(p_nh)
-        {}
+template <typename ConfigT>
+class BaseNodeDynamicReconfigure : public BaseNode {
+ public:
+  typedef typename dynamic_reconfigure::Server<ConfigT> DRServer;
+  typedef typename DRServer::CallbackType DRSeverCallbackType;
 
-      protected:
-        ros::NodeHandle nh_;
-        ros::NodeHandle p_nh_;
-    };
+  explicit BaseNodeDynamicReconfigure(ros::NodeHandle &nh,
+                                      ros::NodeHandle &p_nh)
+      : BaseNode(nh, p_nh), reconfigure_server_(p_nh) {
+    initDynamicReconfigure();
+  }
 
-  template <typename ConfigT>
-  class BaseNodeDynamicReconfigure : public BaseNode {
-  public:
-    typedef typename dynamic_reconfigure::Server<ConfigT> DRServer;
-    typedef typename DRServer::CallbackType DRSeverCallbackType;
+ protected:
+  // callBackDynamicReconfigure(const ConfigT &config, uint32 level)
+  virtual void callbackDynamicReconfigure(const ConfigT, uint32_t) {}
 
-    explicit BaseNodeDynamicReconfigure(ros::NodeHandle &nh, ros::NodeHandle &p_nh):
-      BaseNode(nh, p_nh),
-      reconfigure_server_(p_nh)
-    {
-      initDynamicReconfigure();
-    }
+ private:
+  DRServer reconfigure_server_;
+  DRSeverCallbackType reconfigure_cb_;
 
-  protected:
-    virtual void callbackDynamicReconfigure(const ConfigT &config, uint32_t level) {}
+  void initDynamicReconfigure() {
+    reconfigure_cb_ = boost::bind(
+        &BaseNodeDynamicReconfigure<ConfigT>::callbackDynamicReconfigure, this,
+        _1, _2);
+    reconfigure_server_.setCallback(reconfigure_cb_);
+  }
+};
 
-  private:
-    DRServer reconfigure_server_;
-    DRSeverCallbackType reconfigure_cb_;
+}  // namespace base_node
 
-    void initDynamicReconfigure()
-    {
-      reconfigure_cb_ = boost::bind(&BaseNodeDynamicReconfigure<ConfigT>::callbackDynamicReconfigure, this, _1, _2);
-      reconfigure_server_.setCallback(reconfigure_cb_);
-    }
-
-  };
-
-}
-
-#endif // BASE_NODE_H
+#endif  // BASE_NODE_H

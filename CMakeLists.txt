@@ -105,7 +105,7 @@ catkin_package(
   CATKIN_DEPENDS
     roscpp
     dynamic_reconfigure
-#  INCLUDE_DIRS include
+  INCLUDE_DIRS include
 #  LIBRARIES base_node
 #  CATKIN_DEPENDS roscpp
 #  DEPENDS system_lib
